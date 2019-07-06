@@ -687,12 +687,13 @@ func (p *OAuthProxy) AuthenticateOnly(rw http.ResponseWriter, req *http.Request)
 
 // AuthenticateOrStart checks whether the user is currently logged in and start
 func (p *OAuthProxy) AuthenticateOrStart(rw http.ResponseWriter, req *http.Request) {
-	status := p.Authenticate(rw, req)
-	if status == http.StatusAccepted {
-		rw.WriteHeader(http.StatusOK)
-	} else {
+	session, err := p.getAuthenticatedSession(rw, req)
+	if err != nil {
 		p.OAuthStart(rw, req)
+		return
 	}
+	p.addHeadersForProxying(rw, req, session)
+	rw.WriteHeader(http.StatusOK)
 }
 
 // Proxy proxies the user request if the user is authenticated else it prompts
